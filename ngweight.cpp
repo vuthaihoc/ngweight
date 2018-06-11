@@ -46,7 +46,7 @@ int main(int argc, char* argv[]){
 
   if (!p.parse(argc, argv)){
     cerr << p.error() << endl
-	 << p.usage() << endl;
+   << p.usage() << endl;
     return -1;
   }
 
@@ -57,6 +57,7 @@ int main(int argc, char* argv[]){
 
   vector<int> T;
   vector<int> Doc;
+  int firstDocOffset = 0;
 
   bool isWord = p.exist("word");
   int threshold = p.get<int>("threshold");
@@ -91,11 +92,17 @@ int main(int argc, char* argv[]){
         word += tolower(c);
       } else{
         if (word.size() > 0){
+          if(docid == 0){
+            firstDocOffset++;
+          }
           T.push_back(getID(word, word2id));
           Doc.push_back(docid);
           word = "";
         }
         if (isspace(c) && c != ' '){
+          if(docid == 0){
+            firstDocOffset++;
+          }
           T.push_back(lfid);
           Doc.push_back(docid);
         }
@@ -103,6 +110,9 @@ int main(int argc, char* argv[]){
       ++origLen;
     }
     if (word.size() > 0){
+      if(docid == 0){
+        firstDocOffset++;
+      }
       T.push_back(getID(word, word2id));
       Doc.push_back(docid);
     }
@@ -171,8 +181,8 @@ int main(int argc, char* argv[]){
 
   int nodeNum = 0;
   if (esa_xx(T.begin(), SA.begin(), 
-	    L.begin(), R.begin(), D.begin(), 
-	    n, k, nodeNum) == -1){
+      L.begin(), R.begin(), D.begin(), 
+      n, k, nodeNum) == -1){
     return -1;
   }
   cerr << " node:" << nodeNum << endl;
@@ -195,9 +205,9 @@ int main(int argc, char* argv[]){
     if (D[i] > maxlength) continue;
     if (Rn[R[i]-1] - Rn[L[i]] > 0){
       int beg = SA[L[i]];
+      if(beg > firstDocOffset){continue;}
       int len = D[i];
       bool skip = false;
-      int gtf = R[i] - L[i];
       for (int k = 0; k < len; ++k){
         if (T[beg+k] == lfid){
           skip = true;
@@ -231,9 +241,12 @@ int main(int argc, char* argv[]){
       } else {
         sdf = wa.ApproxCount(beg_pos, end_pos, nums, 0, n, 0, sdfthreshold);
       }
-      //double ngw = log2((double)docid/sdf);
-      //double ngw2 = log2((double)docid*df/(sdf*sdf));
-      cout << i << "\t" << len << "\t" << gtf << "\t" << df << "\t" << sdf << "\t" << term << endl;
+      
+      if(beg < firstDocOffset){
+        double ngw2 = log2((double)docid*df/(sdf*sdf));
+        cout << term << "\t" << ngw2 << "\t";
+      }
+      
     }
   }
 
